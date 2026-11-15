@@ -22,3 +22,10 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Herasat: never commit data / credentials
+*.xlsx
+*.csv
+!tests/**/*.csv
+ADMIN_CREDENTIALS*.txt
+/storage/app/private/*

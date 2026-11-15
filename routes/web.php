@@ -2,6 +2,5 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// The Laravel app is an API only; the UI is served by Next.js.
+Route::get('/', fn () => response()->json(['name' => 'Herasat API']));
