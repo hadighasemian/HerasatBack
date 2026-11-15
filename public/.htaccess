@@ -1,3 +1,6 @@
+# Re-allow the web root (the project root .htaccess denies everything else)
+Require all granted
+
 <IfModule mod_rewrite.c>
     <IfModule mod_negotiation.c>
         Options -MultiViews -Indexes

@@ -1,0 +1,3 @@
+# Defense in depth for XAMPP (code inside htdocs): never serve anything from the project root.
+# Only public/ is reachable (see public/.htaccess and README_DEPLOY.md).
+Require all denied
