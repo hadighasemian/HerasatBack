@@ -11,6 +11,23 @@ use Tests\TestCase;
 
 class RbacTest extends TestCase
 {
+    public function test_admin_endpoints_work_through_a_real_spa_session(): void
+    {
+        // regression: under auth:sanctum the default guard is "sanctum"; role->users must still resolve
+        $admin = $this->makeUser(['admin'], ['personnel_code' => '777001']);
+        $admin->password = 'Adm1n!Strong#Pass';
+        $admin->save();
+        $this->withHeaders($this->spa)->postJson('/api/auth/login', ['username' => '777001', 'password' => 'Adm1n!Strong#Pass'])->assertOk();
+        $this->app['auth']->forgetGuards();
+
+        $roles = $this->withHeaders($this->spa)->getJson('/api/admin/roles')->assertOk();
+        $this->assertSame(1, collect($roles->json('roles'))->firstWhere('name', 'admin')['users_count']);
+        $this->withHeaders($this->spa)->getJson('/api/admin/permissions')->assertOk();
+        $this->withHeaders($this->spa)->getJson('/api/admin/users')->assertOk();
+        $this->withHeaders($this->spa)->getJson('/api/admin/audit-logs')->assertOk();
+        $this->withHeaders($this->spa)->getJson('/api/admin/content/slides')->assertOk();
+    }
+
     public function test_seeded_roles_have_persian_names(): void
     {
         $this->assertSame(13, Role::count());

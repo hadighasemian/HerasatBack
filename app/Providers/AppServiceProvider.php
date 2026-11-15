@@ -16,7 +16,11 @@ class AppServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
-        //
+        // keep SameSite=Strict for the SPA session cookie (Sanctum would downgrade it to Lax)
+        $this->app->bind(
+            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
+            \App\Http\Middleware\EnsureFrontendRequestsAreStatefulStrict::class,
+        );
     }
 
     public function boot(): void

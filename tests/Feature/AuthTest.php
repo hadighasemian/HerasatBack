@@ -41,6 +41,19 @@ class AuthTest extends TestCase
         $this->assertTrue(Hash::check($nc, $user->fresh()->password));
     }
 
+    public function test_session_cookie_stays_samesite_strict_and_httponly_on_api_login(): void
+    {
+        $user = $this->makeUser(['user'], ['personnel_code' => '555111']);
+        $user->password = 'Str0ng!Passw0rd#';
+        $user->save();
+
+        $res = $this->login('555111', 'Str0ng!Passw0rd#')->assertOk();
+        $cookie = collect($res->headers->getCookies())->first(fn ($c) => $c->getName() === config('session.cookie'));
+        $this->assertNotNull($cookie);
+        $this->assertSame('strict', strtolower((string) $cookie->getSameSite()));
+        $this->assertTrue($cookie->isHttpOnly());
+    }
+
     public function test_login_accepts_persian_digits(): void
     {
         $this->makeUser(['user'], ['personnel_code' => '123456']);
