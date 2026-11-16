@@ -30,7 +30,7 @@ class RbacTest extends TestCase
 
     public function test_seeded_roles_have_persian_names(): void
     {
-        $this->assertSame(13, Role::count());
+        $this->assertSame(14, Role::count());
         $this->assertSame('رئیس حفاظت پرسنلی و سلامت اقتصادی', Role::findByName('head_personnel_security', 'web')->display_name);
         $this->assertSame('Personnel Security Supervisor', Role::findByName('personnel_security_supervisor', 'web')->title_en);
         $this->assertSame(Permission::count(), Role::findByName('admin', 'web')->permissions()->count());

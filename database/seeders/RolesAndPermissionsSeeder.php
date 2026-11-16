@@ -44,6 +44,7 @@ class RolesAndPermissionsSeeder extends Seeder
         'head_it_support' => ['رئیس پشتیبانی فناوری اطلاعات', 'Head of IT Support', []],
         'senior_security_specialist' => ['کارشناس ارشد حراست', 'Senior Security Specialist', []],
         'personnel_security_supervisor' => ['سرپرست حفاظت پرسنلی', 'Personnel Security Supervisor', ['reports.view_approved']],
+        'industrial_automation_manager' => ['مدیر اتوماسیون صنعتی', 'Industrial Automation Manager', []],
     ];
 
     public function run(): void
