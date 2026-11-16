@@ -2,8 +2,11 @@
 
 namespace App\Providers;
 
+use App\Http\Middleware\EnsureFrontendRequestsAreStatefulStrict;
 use App\Models\Report;
+use App\Models\Todo;
 use App\Policies\ReportPolicy;
+use App\Policies\TodoPolicy;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Request;
@@ -11,6 +14,7 @@ use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
+use Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -18,8 +22,8 @@ class AppServiceProvider extends ServiceProvider
     {
         // keep SameSite=Strict for the SPA session cookie (Sanctum would downgrade it to Lax)
         $this->app->bind(
-            \Laravel\Sanctum\Http\Middleware\EnsureFrontendRequestsAreStateful::class,
-            \App\Http\Middleware\EnsureFrontendRequestsAreStatefulStrict::class,
+            EnsureFrontendRequestsAreStateful::class,
+            EnsureFrontendRequestsAreStatefulStrict::class,
         );
     }
 
@@ -30,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
         Model::preventLazyLoading(! $this->app->isProduction());
 
         Gate::policy(Report::class, ReportPolicy::class);
+        Gate::policy(Todo::class, TodoPolicy::class);
 
         Password::defaults(fn () => Password::min((int) config('herasat.password.min_length', 10))->mixedCase()->numbers()->symbols());
 
@@ -45,6 +50,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('report-track', fn (Request $r) => Limit::perMinute(10)->by('report-track:'.$r->ip()));
         RateLimiter::for('password-change', fn (Request $r) => Limit::perMinute(5)->by('pwd:'.($r->user()?->id ?? $r->ip())));
         RateLimiter::for('import', fn (Request $r) => Limit::perMinute(3)->by('import:'.($r->user()?->id ?? $r->ip())));
+        RateLimiter::for('todos', fn (Request $r) => Limit::perMinute(30)->by('todos:'.($r->user()?->id ?? $r->ip())));
         RateLimiter::for('api', fn (Request $r) => Limit::perMinute(120)->by($r->user()?->id ?: $r->ip()));
     }
 }

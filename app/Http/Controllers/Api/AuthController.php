@@ -4,11 +4,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserPresenter;
+use App\Models\AuditLog;
 use App\Models\User;
 use App\Rules\StrongPassword;
 use App\Services\AuditLogger;
 use App\Services\CaptchaService;
 use App\Support\Persian;
+use App\Support\UserAgent;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -148,5 +150,69 @@ class AuthController extends Controller
         AuditLogger::log('auth.password_changed', $user);
 
         return response()->json(['message' => 'رمز عبور با موفقیت تغییر کرد.', 'user' => UserPresenter::me($user->fresh())]);
+    }
+
+    private const LOGIN_ACTIONS = [
+        'auth.login' => ['success', 'موفق'],
+        'auth.login_failed' => ['failed', 'ناموفق'],
+        'auth.logout' => ['logout', 'خروج'],
+        'auth.account_locked' => ['locked', 'قفل حساب'],
+    ];
+
+    /** The current user's own recent login attempts (successful and failed). Last 50, paginated. */
+    public function loginHistory(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'per_page' => ['nullable', 'integer', 'min:5', 'max:50'],
+        ]);
+        $perPage = $data['per_page'] ?? 10;
+        $user = $request->user();
+        $actions = array_keys(self::LOGIN_ACTIONS);
+
+        $latestIds = AuditLog::query()
+            ->where('user_id', $user->id)
+            ->whereIn('action', $actions)
+            ->orderByDesc('id')
+            ->limit(50)
+            ->pluck('id');
+
+        $logs = AuditLog::query()
+            ->whereIn('id', $latestIds)
+            ->orderByDesc('id')
+            ->paginate($perPage);
+
+        $lastSuccess = AuditLog::query()
+            ->where('user_id', $user->id)
+            ->where('action', 'auth.login')
+            ->orderByDesc('id')
+            ->first();
+
+        return response()->json([
+            'data' => collect($logs->items())->map(fn (AuditLog $l) => $this->loginHistoryItem($l)),
+            'meta' => [
+                'current_page' => $logs->currentPage(),
+                'last_page' => $logs->lastPage(),
+                'total' => $logs->total(),
+                'per_page' => $logs->perPage(),
+            ],
+            'last_successful_login' => $lastSuccess ? $this->loginHistoryItem($lastSuccess) : null,
+        ]);
+    }
+
+    private function loginHistoryItem(AuditLog $l): array
+    {
+        [$result, $label] = self::LOGIN_ACTIONS[$l->action] ?? ['other', $l->action];
+        $ua = UserAgent::parse($l->user_agent);
+
+        return [
+            'id' => $l->id,
+            'action' => $l->action,
+            'result' => $result,
+            'result_label' => $label,
+            'occurred_at' => $l->created_at?->toIso8601String(),
+            'ip' => $l->ip,
+            'browser' => $ua['browser'],
+            'os' => $ua['os'],
+        ];
     }
 }

@@ -10,6 +10,7 @@ use App\Http\Controllers\Api\Public\CaptchaController;
 use App\Http\Controllers\Api\Public\PublicContentController;
 use App\Http\Controllers\Api\Public\PublicReportController;
 use App\Http\Controllers\Api\ReportController;
+use App\Http\Controllers\Api\TodoController;
 use App\Http\Middleware\EnforceSessionPolicy;
 use App\Http\Middleware\EnsurePasswordChanged;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +39,16 @@ Route::middleware(['auth:sanctum', EnforceSessionPolicy::class])->group(function
     Route::middleware(EnsurePasswordChanged::class)->group(function () {
         // Own profile: read-only. There is no self-update endpoint for profile fields.
         Route::get('profile', [AuthController::class, 'profile']);
+        Route::get('profile/login-history', [AuthController::class, 'loginHistory']);
+
+        // Personal to-do list (owner-only; also gated by todos.use)
+        Route::middleware('can:todos.use')->group(function () {
+            Route::get('todos', [TodoController::class, 'index']);
+            Route::get('todos/{todo}', [TodoController::class, 'show'])->whereNumber('todo');
+            Route::post('todos', [TodoController::class, 'store'])->middleware('throttle:todos');
+            Route::put('todos/{todo}', [TodoController::class, 'update'])->middleware('throttle:todos')->whereNumber('todo');
+            Route::delete('todos/{todo}', [TodoController::class, 'destroy'])->middleware('throttle:todos')->whereNumber('todo');
+        });
 
         // Reports inbox (visibility enforced by ReportPolicy)
         Route::get('reports', [ReportController::class, 'index']);

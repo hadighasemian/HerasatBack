@@ -27,12 +27,13 @@ class RolesAndPermissionsSeeder extends Seeder
         'reports.view_all' => ['مشاهده همه گزارش‌ها (فقط خواندنی)', 'گزارش‌ها'],
         'audit.view' => ['مشاهده گزارش رویدادها (Audit Log)', 'سیستم'],
         'content.manage' => ['مدیریت محتوای سایت (اسلایدها و نکات امنیتی)', 'محتوا'],
+        'todos.use' => ['مدیریت کارهای شخصی', 'داشبورد'],
     ];
 
     public const ROLES = [
         // name => [display_name (fa), title_en, permissions]
         'admin' => ['مدیر سیستم', 'Administrator', '*'],
-        'user' => ['کاربر', 'User', []],
+        'user' => ['کاربر', 'User', ['todos.use']],
         'security_affairs_manager' => ['مدیر امور حراست', 'Security Affairs Manager', ['reports.view_all']],
         'head_personnel_security' => ['رئیس حفاظت پرسنلی و سلامت اقتصادی', 'Head of Personnel Security and Economic Integrity', ['reports.review']],
         'head_physical_security' => ['رئیس حفاظت فیزیکی و پدافند غیرعامل', 'Head of Physical Security and Passive Defense', []],
@@ -72,6 +73,12 @@ class RolesAndPermissionsSeeder extends Seeder
                 // only set defaults on first creation so admin changes are preserved on re-seed
                 $role->syncPermissions($perms);
             }
+        }
+
+        // Grant newly introduced default permissions to existing roles without removing customizations.
+        $userRole = Role::findByName('user', 'web');
+        if (! $userRole->hasPermissionTo('todos.use')) {
+            $userRole->givePermissionTo('todos.use');
         }
 
         app(PermissionRegistrar::class)->forgetCachedPermissions();

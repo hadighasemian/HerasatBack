@@ -156,6 +156,6 @@ class RbacTest extends TestCase
     public function test_me_returns_permissions_for_menu(): void
     {
         $u = $this->makeUser(['user', 'head_personnel_security']);
-        $this->actingAs($u)->getJson('/api/auth/me')->assertOk()->assertJsonPath('user.permissions', ['reports.review']);
+        $this->actingAs($u)->getJson('/api/auth/me')->assertOk()->assertJsonPath('user.permissions', ['reports.review', 'todos.use']);
     }
 }
