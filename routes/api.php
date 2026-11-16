@@ -62,6 +62,8 @@ Route::middleware(['auth:sanctum', EnforceSessionPolicy::class])->group(function
             Route::post('users', [UserController::class, 'store'])->middleware('can:users.create');
             Route::post('users/import', [UserController::class, 'import'])->middleware(['can:users.import', 'throttle:import']);
             Route::get('users/{user}', [UserController::class, 'show'])->middleware('can:users.view')->whereNumber('user');
+            Route::get('users/{user}/sensitive', [UserController::class, 'sensitive'])->middleware(['can:users.view', 'can:users.view_sensitive', 'throttle:sensitive'])->whereNumber('user');
+            Route::get('users/{user}/login-history', [UserController::class, 'loginHistory'])->middleware('can:users.view')->whereNumber('user');
             Route::put('users/{user}', [UserController::class, 'update'])->middleware('can:users.update')->whereNumber('user');
             Route::delete('users/{user}', [UserController::class, 'destroy'])->middleware('can:users.delete')->whereNumber('user');
             Route::post('users/{user}/reset-password', [UserController::class, 'resetPassword'])->middleware('can:users.reset_password')->whereNumber('user');

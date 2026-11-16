@@ -34,7 +34,7 @@ class PermissionController extends Controller
             'description' => ['nullable', 'string', 'max:500'],
         ]);
         $permission = Permission::create($data + ['guard_name' => 'web']);
-        // The system administrator role always holds every permission
+        // New permissions are granted to the administrator role by default (it can be removed later in the roles UI)
         Role::where('name', 'admin')->where('is_system', true)->first()?->givePermissionTo($permission);
         app(PermissionRegistrar::class)->forgetCachedPermissions();
         AuditLogger::log('permission.created', $permission, ['name' => $permission->name]);

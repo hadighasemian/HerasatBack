@@ -7,6 +7,7 @@ use App\Http\Resources\UserPresenter;
 use App\Models\Role;
 use App\Models\User;
 use App\Services\AuditLogger;
+use App\Services\LoginHistory;
 use App\Services\UserImportService;
 use App\Support\NationalCode;
 use App\Support\Persian;
@@ -55,6 +56,25 @@ class UserController extends Controller
     public function show(User $user): JsonResponse
     {
         return response()->json(['user' => UserPresenter::adminDetail($user->load('roles'))]);
+    }
+
+    /** Full national code and phone of one user. Separate, permission-gated and audit-logged on every view. */
+    public function sensitive(User $user): JsonResponse
+    {
+        AuditLogger::log('user.sensitive_viewed', $user);
+
+        return response()->json([
+            'national_code' => $user->national_code,
+            'phone' => $user->phone,
+        ])->header('Cache-Control', 'no-store, private');
+    }
+
+    /** Recent login attempts of one user (same data the user sees on their own profile). */
+    public function loginHistory(Request $request, User $user): JsonResponse
+    {
+        $data = $request->validate(['per_page' => ['nullable', 'integer', 'min:5', 'max:50']]);
+
+        return response()->json(LoginHistory::forUser($user, $data['per_page'] ?? 10));
     }
 
     public function store(Request $request): JsonResponse

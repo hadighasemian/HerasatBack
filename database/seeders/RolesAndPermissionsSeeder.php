@@ -19,6 +19,7 @@ class RolesAndPermissionsSeeder extends Seeder
         'users.reset_password' => ['بازنشانی رمز عبور کاربر', 'کاربران'],
         'users.assign_roles' => ['تخصیص نقش به کاربر', 'کاربران'],
         'users.import' => ['ورود گروهی کاربران از فایل', 'کاربران'],
+        'users.view_sensitive' => ['مشاهده کد ملی و تلفن کامل کاربران', 'کاربران'],
         'roles.view' => ['مشاهده نقش‌ها و دسترسی‌ها', 'نقش‌ها و دسترسی‌ها'],
         'roles.manage' => ['مدیریت نقش‌ها و تخصیص دسترسی', 'نقش‌ها و دسترسی‌ها'],
         'permissions.manage' => ['تعریف دسترسی (اقدام) جدید', 'نقش‌ها و دسترسی‌ها'],
@@ -52,8 +53,12 @@ class RolesAndPermissionsSeeder extends Seeder
     {
         app(PermissionRegistrar::class)->forgetCachedPermissions();
 
+        $created = [];
         foreach (self::PERMISSIONS as $name => [$display, $group]) {
             $p = Permission::firstOrNew(['name' => $name, 'guard_name' => 'web']);
+            if (! $p->exists) {
+                $created[] = $name;
+            }
             $p->display_name = $display;
             $p->group = $group;
             $p->is_system = true;
@@ -68,7 +73,13 @@ class RolesAndPermissionsSeeder extends Seeder
             $role->is_system = true;
             $role->save();
             if ($perms === '*') {
-                $role->syncPermissions(Permission::all());
+                // admin: everything on first creation; afterwards keep the admin's own edits and only
+                // add permissions introduced by this run plus the ones the admin role must always keep
+                if ($isNew) {
+                    $role->syncPermissions(Permission::all());
+                } else {
+                    $role->givePermissionTo(array_values(array_unique(array_merge($created, Role::ADMIN_LOCKED_PERMISSIONS))));
+                }
             } elseif ($isNew) {
                 // only set defaults on first creation so admin changes are preserved on re-seed
                 $role->syncPermissions($perms);

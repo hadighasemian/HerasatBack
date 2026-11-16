@@ -51,6 +51,7 @@ class AppServiceProvider extends ServiceProvider
         RateLimiter::for('password-change', fn (Request $r) => Limit::perMinute(5)->by('pwd:'.($r->user()?->id ?? $r->ip())));
         RateLimiter::for('import', fn (Request $r) => Limit::perMinute(3)->by('import:'.($r->user()?->id ?? $r->ip())));
         RateLimiter::for('todos', fn (Request $r) => Limit::perMinute(30)->by('todos:'.($r->user()?->id ?? $r->ip())));
+        RateLimiter::for('sensitive', fn (Request $r) => Limit::perMinute(20)->by('sensitive:'.($r->user()?->id ?? $r->ip())));
         RateLimiter::for('api', fn (Request $r) => Limit::perMinute(120)->by($r->user()?->id ?: $r->ip()));
     }
 }

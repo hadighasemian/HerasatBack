@@ -12,6 +12,25 @@ class Role extends SpatieRole
 
     protected $casts = ['is_system' => 'boolean'];
 
+    public const ADMIN = 'admin';
+
+    /**
+     * Permissions the admin role can never lose, so nobody can lock the system out of managing
+     * roles and users. Everything else on the admin role is editable.
+     */
+    public const ADMIN_LOCKED_PERMISSIONS = ['roles.view', 'roles.manage', 'users.view', 'users.update', 'users.assign_roles'];
+
+    public function isAdminRole(): bool
+    {
+        return $this->name === self::ADMIN && $this->guard_name === 'web';
+    }
+
+    /** @return list<string> */
+    public function lockedPermissions(): array
+    {
+        return $this->isAdminRole() ? self::ADMIN_LOCKED_PERMISSIONS : [];
+    }
+
     /**
      * Spatie resolves the user model from the *current default guard*; under `auth:sanctum`
      * that is the provider-less "sanctum" guard, which breaks e.g. withCount('users').
